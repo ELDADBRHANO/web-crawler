@@ -1,0 +1,18 @@
+{
+  "name": "web-crawler-node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "nodemon node ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
+    "node-fetch": "^3.3.0",
+    "nodemon": "^2.0.20"
+  }
+}

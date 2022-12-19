@@ -4,8 +4,8 @@ import  fs from "fs";
 import  path from "path";
 import  urlParser from "url";
 
+let results = [{}]
 const seenUrls = {};
-
 const getUrl = (link, host, protocol) => {
   if (link.includes("http")) {
     return link;
@@ -16,47 +16,58 @@ const getUrl = (link, host, protocol) => {
   }
 };
 
-const crawl = async ({ url, ignore }) => {
+const crawl = async ({ url, ignore ,depth}) => {
   if (seenUrls[url]) return;
-  console.log("crawling", url);
   seenUrls[url] = true;
-
   const { host, protocol } = urlParser.parse(url);
 
   const response = await fetch(url);
   const html = await response.text();
   const $ = cheerio.load(html);
-  const links = $("a")
+  let links = $("a")
     .map((i, link) => link.attribs.href)
     .get();
-
+  
+  const newList = links.slice(0,depth)
   const imageUrls = $("img")
     .map((i, link) => link.attribs.src)
     .get();
-
+  
+  console.log("crawling", url);
   imageUrls.forEach((imageUrl) => {
-    fetch(getUrl(imageUrl, host, protocol)).then((response) => {
+    fetch(imageUrl).then((response) => {
       const filename = path.resolve(imageUrl);
-      const dest = fs.createWriteStream(`images/${filename}`)
+      console.log("image", imageUrl);
+      const dest = fs.createWriteStream(`${filename}`)
       dest.once('error',()=>{
         return filename+1;
       })
       response.body.pipe(dest);
-    });
+      
+      results.push({
+        "imageUrl": `${filename}`,
+        "sourceUrl" : `${url}`,
+        "depth": depth
+    })
+    
+    console.log("res",results)
   });
-
-
-  links
-    .filter((link) => link.includes(host) && !link.includes(ignore))
-    .forEach((link) => {
-      crawl({
-        url: getUrl(link, host, protocol),
-        ignore,
-      });
-    });
-};
-
-crawl({
-  url: "http://stevescooking.blogspot.com/",
-  ignore: "/search",
 });
+
+newList
+.filter((link) => link.includes(host) && !link.includes(ignore))
+.forEach((link) => {
+  crawl({
+    url: getUrl(link, host, protocol),
+    ignore,
+    depth : Object.keys(seenUrls).length
+  });
+});
+}
+  
+  crawl({
+  url: "https://www.sdpgroups.com",
+  depth : 3
+  
+});
+

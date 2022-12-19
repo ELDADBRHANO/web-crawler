@@ -18,6 +18,7 @@ const getUrl = (link, host, protocol) => {
 
 const crawl = async ({ url, ignore ,depth}) => {
   if (seenUrls[url]) return;
+  
   seenUrls[url] = true;
   const { host, protocol } = urlParser.parse(url);
 
@@ -33,41 +34,47 @@ const crawl = async ({ url, ignore ,depth}) => {
     .map((i, link) => link.attribs.src)
     .get();
   
-  console.log("crawling", url);
+  // console.log("crawling", url);
   imageUrls.forEach((imageUrl) => {
     fetch(imageUrl).then((response) => {
       const filename = path.resolve(imageUrl);
       console.log("image", imageUrl);
-      const dest = fs.createWriteStream(`${filename}`)
-      dest.once('error',()=>{
-        return filename+1;
-      })
-      response.body.pipe(dest);
+      // const dest = fs.createWriteStream(`${filename}`)
+      // dest.once('error',()=>{
+      //   return filename+1;
+      // })
+      // response.body.pipe(dest);
       
       results.push({
         "imageUrl": `${filename}`,
         "sourceUrl" : `${url}`,
         "depth": depth
     })
-    
     console.log("res",results)
+
+    // writeJsonToFile(results)
   });
 });
 
 newList
 .filter((link) => link.includes(host) && !link.includes(ignore))
 .forEach((link) => {
-  crawl({
-    url: getUrl(link, host, protocol),
-    ignore,
-    depth : Object.keys(seenUrls).length
-  });
+    crawl({
+      url: getUrl(link, host, protocol),
+      ignore,
+      depth : Object.keys(seenUrls).length
+    });
 });
+
 }
-  
   crawl({
   url: "https://www.sdpgroups.com",
   depth : 3
   
 });
+
+const writeJsonToFile = (jsonContent) => {
+  fs.appendFile(`./results.json`, JSON.stringify(jsonContent), () => {
+  });
+};
 

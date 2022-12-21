@@ -1,14 +1,18 @@
 import fetch from "node-fetch";
 import cheerio from "cheerio";
 import urlParser from "url";
+import fs from "fs";
 
 const url = process.argv[2];
 const { host, protocol } = urlParser.parse(url);
-const maxDepth = process.argv[3];
-console.log(url);
-console.log(maxDepth);
+const maxDepth = parseInt(process.argv[3]);
+const seenUrls = {};
+
 async function crawl(currentPageUrl, currentDepth) {
-  if(currentDepth === maxDepth) return;
+  if (seenUrls[currentPageUrl]) return;
+  
+  console.log(maxDepth);
+  seenUrls[currentPageUrl] = true;
   let results = [];
 
   const sourcePage = await fetch(currentPageUrl);
@@ -17,7 +21,6 @@ async function crawl(currentPageUrl, currentDepth) {
   const currentDepthUrls = $("a")
     .map((i, link) => link.attribs.href)
     .get();
-
   const images = $("img")
     .map((i, link) => link.attribs.src)
     .get();
@@ -28,29 +31,29 @@ async function crawl(currentPageUrl, currentDepth) {
       depth: currentDepth,
     });
   }
-  console.log(currentDepthUrls);
+
+  // console.log(currentDepthUrls);
   const urls = filterValidUrls(currentDepthUrls);
-  console.log(urls, "urls");
 
   for (let i = 0; i < urls.length; i++) {
-    crawl(urls[i],currentDepth++)
-
+    console.log("urls",urls, "currentDepth", currentDepth);
+    if(maxDepth===currentDepth) break;
+    crawl(urls[i], currentDepth++);
   }
+  // console.log(seenUrls);
 }
-
-
 
 const startCrawler = async () => {
   await crawl(url, 0);
 };
 startCrawler();
 
-
-
 const filterValidUrls = (links) => {
   return links
     .filter((link) => {
-      return link.includes("http") || link.startsWith("/") || link.startsWith("?");
+      return (
+        link.includes("http") || link.startsWith("/") || link.startsWith("?")
+      );
     })
     .map((link) => {
       if (link.startsWith("/")) {
@@ -59,7 +62,8 @@ const filterValidUrls = (links) => {
         return `${protocol}//${host}${link}`;
       } else return link;
       // TODO filter visited links;
-    });
-
-
+    })
+    
 };
+
+

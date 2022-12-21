@@ -11,34 +11,37 @@ const seenUrls = {};
 async function crawl(currentPageUrl, currentDepth) {
   if (seenUrls[currentPageUrl]) return;
   
-  console.log(maxDepth);
   seenUrls[currentPageUrl] = true;
-  let results = [];
-
+  // console.log(seenUrls);
+  let data = {results:[]};
+  
   const sourcePage = await fetch(currentPageUrl);
   const html = await sourcePage.text();
   const $ = cheerio.load(html);
   const currentDepthUrls = $("a")
-    .map((i, link) => link.attribs.href)
-    .get();
+  .map((i, link) => link.attribs.href)
+  .get();
   const images = $("img")
     .map((i, link) => link.attribs.src)
     .get();
   for (let i = 0; i < images.length; i++) {
-    results.push({
+    data.results.push({
       imageUrl: images[i],
-      sourceUrl: url,
+      sourceUrl: currentPageUrl,
       depth: currentDepth,
     });
   }
 
-  // console.log(currentDepthUrls);
+  
   const urls = filterValidUrls(currentDepthUrls);
-
   for (let i = 0; i < urls.length; i++) {
-    console.log("urls",urls, "currentDepth", currentDepth);
-    if(maxDepth===currentDepth) break;
+    // console.log("urls",urls, "currentDepth", currentDepth);
+    if(maxDepth===currentDepth){
+      writeJsonToFile(data)
+      break;
+    } ;
     crawl(urls[i], currentDepth++);
+    // console.log(urls[i],'45');
   }
   // console.log(seenUrls);
 }
@@ -49,6 +52,7 @@ const startCrawler = async () => {
 startCrawler();
 
 const filterValidUrls = (links) => {
+  // console.log(links,'56');
   return links
     .filter((link) => {
       return (
@@ -67,3 +71,10 @@ const filterValidUrls = (links) => {
 };
 
 
+
+
+const writeJsonToFile =(data)=>{
+  fs.appendFile('./results.json',JSON.stringify(data),(err)=>{
+    if(err) return console.log(err);
+  })
+}

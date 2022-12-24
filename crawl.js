@@ -30,7 +30,7 @@ async function crawl(currentPageUrl, currentDepth, maxDepth) {
     });
   }
 
-  const urls = filterValidUrls(currentDepthUrls,host,protocol);
+  const urls = await filterValidUrls(currentDepthUrls, host, protocol);
   for (let i = 0; i < urls.length; i++) {
     if (currentDepth < maxDepth) {
       crawl(urls[i], currentDepth++);
@@ -50,7 +50,7 @@ const startCrawler = async () => {
 };
 startCrawler();
 
-const filterValidUrls = (links,host,protocol) => {
+const filterValidUrls = async (links, host, protocol) => {
   // console.log(links,'links');
   return links
     .filter((link) => {
@@ -66,7 +66,6 @@ const filterValidUrls = (links,host,protocol) => {
       } else return link;
     });
 };
-
 
 const writeJsonToFile = (data) => {
   const isExist = fs.existsSync("./results.json");

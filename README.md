@@ -10,7 +10,7 @@ $ npm install
 # Usage
 
 <p>
-Run in the command line: <strong>node src/index.js start_url depth </strong>
+Run in the command line: <strong>node carwl.js start_url depth </strong>
 </p>
 
 

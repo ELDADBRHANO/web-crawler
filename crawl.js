@@ -19,7 +19,11 @@ async function crawl(currentPageUrl, currentDepth, maxDepth) {
     .get();
 
   const images = $("img")
-    .map((i, link) => link.attribs.src)
+    .map((i, link) => {
+      if(link.attribs.src.startsWith('//')){
+        return `${protocol}${link.attribs.src}`
+      }
+    })
     .get();
 
   for (let i = 0; i < images.length; i++) {
@@ -55,7 +59,7 @@ const filterValidUrls = async (links, host, protocol) => {
   return links
     .filter((link) => {
       return (
-        link.includes("http") || link.startsWith("/") || link.startsWith("?")
+        link.includes("http") || link.startsWith("/") || link.startsWith("?") 
       );
     })
     .map((link) => {
@@ -74,14 +78,8 @@ const writeJsonToFile = (data) => {
       if (err) return console.log(err);
     });
   } else {
-    fs.readFile("./results.json", "utf-8", (err, fileContent) => {
-      if (err) return console.log(err);
-      if (!fileContent) return console.log("no data");
-      let obj = JSON.parse(fileContent);
-      obj.results.push(...data.results);
-      fs.writeFile("./results.json", JSON.stringify(obj), (err) => {
+      fs.writeFile("./results.json", JSON.stringify(data), (err) => {
         if (err) return err;
       });
-    });
   }
 };

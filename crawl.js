@@ -1,7 +1,7 @@
 import fetch from "node-fetch";
 import cheerio from "cheerio";
 import urlParser from "url";
-import fs from "fs";
+import fs from "fs/promises";
 
 const seenUrls = {};
 
@@ -20,8 +20,10 @@ async function crawl(currentPageUrl, currentDepth, maxDepth) {
 
   const images = $("img")
     .map((i, link) => {
-      if(link.attribs.src.startsWith('//')){
-        return `${protocol}${link.attribs.src}`
+      if (link.attribs.src?.startsWith("//")) {
+        return `${protocol}${link.attribs.src}`;
+      } else {
+        return link.attribs.src;
       }
     })
     .get();
@@ -37,14 +39,12 @@ async function crawl(currentPageUrl, currentDepth, maxDepth) {
   const urls = await filterValidUrls(currentDepthUrls, host, protocol);
   for (let i = 0; i < urls.length; i++) {
     if (currentDepth < maxDepth) {
-      crawl(urls[i], currentDepth++);
+      crawl(urls[i], ++currentDepth);
     } else {
       writeJsonToFile(data);
       return console.log("crawl end.");
-    }
-    // console.log(urls[i],'-- url[i]');
+    }    
   }
-  // console.log(seenUrls);
 }
 
 const startCrawler = async () => {
@@ -52,34 +52,35 @@ const startCrawler = async () => {
   const maxDepth = parseInt(process.argv[3]);
   await crawl(url, 0, maxDepth);
 };
+
 startCrawler();
 
 const filterValidUrls = async (links, host, protocol) => {
-  // console.log(links,'links');
   return links
     .filter((link) => {
       return (
-        link.includes("http") || link.startsWith("/") || link.startsWith("?") 
+        link.startsWith("http") || link.startsWith("/") || link.startsWith("//")
       );
     })
     .map((link) => {
-      if (link.startsWith("/")) {
-        return `${protocol}//${host}${link}`;
-      } else if (link.startsWith("?")) {
+      if (link.startsWith("/") || link.startsWith("//")) {
         return `${protocol}//${host}${link}`;
       } else return link;
     });
 };
 
-const writeJsonToFile = (data) => {
-  const isExist = fs.existsSync("./results.json");
-  if (!isExist) {
-    return fs.appendFile("./results.json", JSON.stringify(data), (err) => {
-      if (err) return console.log(err);
-    });
-  } else {
-      fs.writeFile("./results.json", JSON.stringify(data), (err) => {
-        if (err) return err;
-      });
-  }
+const writeJsonToFile = async (data) => {
+  const filePath = "./results.json";
+  let existingData = [];
+  try {
+    const fileContent = await fs.readFile(filePath, "utf-8");
+    existingData = JSON.parse(fileContent).results;
+  } catch (err) {console.log(err);}
+
+  const newData = [...existingData, ...data.results];
+  const json = { results: newData };
+  json.results.sort((a, b) => a.depth - b.depth);
+  await fs.writeFile(filePath, JSON.stringify(json));
 };
+
+

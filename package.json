@@ -5,7 +5,8 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon node ."
+    "start": "nodemon node .",
+    "test":"mocha"
   },
   "keywords": [],
   "author": "",
@@ -13,6 +14,7 @@
   "dependencies": {
     "cheerio": "^1.0.0-rc.3",
     "http-server": "^14.1.1",
+    "mocha": "^10.2.0",
     "node-fetch": "^3.3.0",
     "nodemon": "^2.0.20"
   }
